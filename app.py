@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
 from utile.dataset_manager import DatasetManager
 from utile.polynomial_regression import PolynomialRegression
+from utile.visualization import Visualization
+from utile.loocv import LOOCV
 
 if __name__ == "__main__":
     file_path = "data/Position_salaries.csv"
@@ -18,11 +18,12 @@ if __name__ == "__main__":
 
     if df_selected is not None:
         poly_reg = PolynomialRegression(df_selected, x_col, y_col)
+        loocv = LOOCV(df_selected, x_col, y_col)
 
-        # Choisir une plage d'ordres de polynôme à tester
+        # Définir les ordres de polynômes à tester
         max_degree = len(df_selected) - 1
         print(f"\n📌 Nombre maximum de points : {max_degree}")
-        
+
         try:
             degree_min = int(input(f"Entrez l'ordre minimum du polynôme (>=1) : "))
             degree_max = int(input(f"Entrez l'ordre maximum du polynôme (<= {max_degree}) : "))
@@ -36,10 +37,12 @@ if __name__ == "__main__":
 
         # Stocker les résultats
         results = []
-
-        # Boucle sur les ordres choisis
         for degree in range(degree_min, degree_max + 1):
             result = poly_reg.fit(degree)
+            loocv_result = loocv.cross_validate(degree)
+
+            # Ajouter le MSE LOOCV
+            result["loocv_avg_mse"] = loocv_result["avg_mse"]
             results.append(result)
 
             # Affichage des résultats
@@ -47,17 +50,9 @@ if __name__ == "__main__":
             print(f"  - Coefficients : {result['coefficients']}")
             print(f"  - R² Score : {result['r2_score']:.4f}")
             print(f"  - MSE : {result['mse']:.4f}")
+            print(f"  - LOOCV MSE : {result['loocv_avg_mse']:.4f}")
 
-        # Visualisation des interpolations
-        plt.figure(figsize=(12, 8))
-        sns.scatterplot(x=df_selected[x_col], y=df_selected[y_col], color='red', label="Données d'origine")
-
-        for res in results:
-            plt.plot(res["X_interp"], res["Y_interp"], label=f"Ordre {res['degree']}")
-
-        plt.title(f"Interpolations polynomiales d'ordre {degree_min} à {degree_max}")
-        plt.xlabel(x_col)
-        plt.ylabel(y_col)
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+        # Générer les interpolations et afficher le graphique
+        viz = Visualization(df_selected, x_col, y_col)
+        viz.generate_interpolations(results)
+        viz.plot(results)
