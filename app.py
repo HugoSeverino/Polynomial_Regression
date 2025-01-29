@@ -1,40 +1,45 @@
-import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+from utile.dataset_manager import DatasetManager
+from utile.polynomial_regression import PolynomialRegression
 
-# Charger le fichier
-df = pd.read_csv("data/Position_salaries.csv")
+if __name__ == "__main__":
+    file_path = "data/Position_salaries.csv"
 
-# Afficher les colonnes disponibles
-print("Colonnes disponibles dans le dataset :")
-print(df.columns.tolist())
+    # Gérer le dataset
+    dataset_manager = DatasetManager(file_path)
+    dataset_manager.display_columns()
 
-# Demander à l'utilisateur de choisir les colonnes
-x_col = input("\nChoisissez la colonne pour l'axe X : ")
-y_col = input("Choisissez la colonne pour l'axe Y : ")
-
-# Vérifier si les colonnes existent
-if x_col in df.columns and y_col in df.columns:
-    # Créer un nouveau dataset avec les colonnes choisies
-    df_selected = df[[x_col, y_col]]
+    # Sélection des colonnes
+    x_col = input("\nChoisissez la colonne pour l'axe X : ")
+    y_col = input("Choisissez la colonne pour l'axe Y : ")
     
-    # Afficher le dataset créé
-    print("\nDataset créé avec les colonnes sélectionnées :")
-    print(df_selected.head())
+    df_selected = dataset_manager.select_columns(x_col, y_col)
+    
+    if df_selected is not None:
+        # Effectuer les interpolations polynomiales
+        poly_reg = PolynomialRegression(df_selected, x_col, y_col)
+        poly_reg.fit_polynomials()
+        results = poly_reg.get_results()
 
-    # Sauvegarder le nouveau dataset si nécessaire
-    df_selected.to_csv("data/dataset_selection.csv", index=False)
+        # Affichage des résultats
+        print("\n📊 Résultats des interpolations polynomiales :")
+        for degree, res in results.items():
+            print(f"\n🔹 Polynôme d'ordre {degree}")
+            print(f"  - Coefficients : {res['coefficients']}")
+            print(f"  - R² Score : {res['r2_score']:.4f}")
+            print(f"  - MSE : {res['mse']:.4f}")
 
-    # Visualiser les données avec Seaborn
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(x=df_selected[x_col], y=df_selected[y_col])
+        # Visualisation des interpolations
+        plt.figure(figsize=(12, 8))
+        sns.scatterplot(x=df_selected[x_col], y=df_selected[y_col], color='red', label="Données d'origine")
 
-    # Personnalisation du graphique
-    plt.title(f"Relation entre {x_col} et {y_col}")
-    plt.xlabel(x_col)
-    plt.ylabel(y_col)
-    plt.grid(True)
-    plt.show()
-else:
-    print("\n❌ Erreur : Une des colonnes choisies n'existe pas dans le dataset.")
+        for degree, res in results.items():
+            plt.plot(res["X_interp"], res["Y_interp"], label=f"Ordre {degree}")
 
+        plt.title(f"Interpolations polynomiales d'ordre 1 à {len(df_selected)-1}")
+        plt.xlabel(x_col)
+        plt.ylabel(y_col)
+        plt.legend()
+        plt.grid(True)
+        plt.show()
