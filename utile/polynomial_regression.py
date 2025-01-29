@@ -22,15 +22,10 @@ class PolynomialRegression:
         r2 = r2_score(self.Y, Y_pred)
         mse = mean_squared_error(self.Y, Y_pred)
 
-        # Générer des X interpolés pour lisser l'affichage
-        X_new = np.linspace(min(self.X), max(self.X), 200)
-        Y_new = poly_eq(X_new)
-
         return {
             "degree": degree,
             "coefficients": coeffs,
             "r2_score": r2,
             "mse": mse,
-            "X_interp": X_new,
-            "Y_interp": Y_new
+            "poly_eq": poly_eq
         }
