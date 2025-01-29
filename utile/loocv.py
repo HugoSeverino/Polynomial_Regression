@@ -1,4 +1,5 @@
 import numpy as np
+from utile.polynomial_regression import PolynomialRegression
 
 class LOOCV:
     """Effectue une Leave-One-Out Cross-Validation pour une régression polynomiale d'un ordre donné."""
@@ -11,26 +12,23 @@ class LOOCV:
         self.Y = df[y_col].values
 
     def cross_validate(self, degree):
-        """Effectue LOOCV en calculant la moyenne des erreurs quadratiques."""
+        """Effectue LOOCV en appelant `PolynomialRegression` à chaque itération et calcule le MSE moyen."""
         n = len(self.X)
         squared_errors = []
 
         for i in range(n):
-            # Exclure un point pour l'entraînement
-            X_train = np.delete(self.X, i)
-            Y_train = np.delete(self.Y, i)
-            X_test = self.X[i]
-            Y_test = self.Y[i]
+            # Enlever un point du dataset
+            df_train = self.df.drop(self.df.index[i])
 
-            # Ajuster le modèle polynomiale
-            coeffs = np.polyfit(X_train, Y_train, degree)
-            poly_eq = np.poly1d(coeffs)
+            # Utiliser PolynomialRegression pour ajuster le modèle sans ce point
+            poly_reg = PolynomialRegression(df_train, self.x_col, self.y_col)
+            result = poly_reg.fit(degree)
 
-            # Prédiction du point exclu
-            Y_pred = poly_eq(X_test)
+            # Prédiction sur le point exclu
+            Y_pred = result["poly_eq"](self.X[i])
 
-            # Erreur quadratique
-            squared_error = (Y_test - Y_pred) ** 2
+            # Calculer l'erreur quadratique
+            squared_error = (self.Y[i] - Y_pred) ** 2
             squared_errors.append(squared_error)
 
         # Calcul de la moyenne des erreurs quadratiques (MSE)

@@ -13,12 +13,18 @@ class PolynomialRegression:
 
     def fit(self, degree):
         """Ajuste un polynôme d'ordre `degree` et retourne les coefficients, MSE et R²."""
-        # Ajustement du polynôme
-        coeffs = np.polyfit(self.X, self.Y, degree)
+
+        # 📌 Normalisation de X pour éviter les erreurs numériques
+        X_mean = np.mean(self.X)
+        X_std = np.std(self.X)
+        X_norm = (self.X - X_mean) / X_std  # Normalisation des données
+
+        # Ajustement du polynôme sur les X normalisés
+        coeffs = np.polyfit(X_norm, self.Y, degree)
         poly_eq = np.poly1d(coeffs)
 
-        # Prédiction sur les points d'origine
-        Y_pred = poly_eq(self.X)
+        # Prédiction sur les X normalisés
+        Y_pred = poly_eq(X_norm)
 
         # Calcul des métriques
         mse = mean_squared_error(self.Y, Y_pred)
@@ -29,5 +35,5 @@ class PolynomialRegression:
             "coefficients": coeffs,
             "r2_score": r2,
             "mse": mse,
-            "poly_eq": poly_eq  # On stocke l'objet du polynôme pour l'interpolation future
+            "poly_eq": lambda x: poly_eq((x - X_mean) / X_std)  # Ajustement de la prédiction à l'échelle originale
         }

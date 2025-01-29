@@ -1,7 +1,6 @@
 from utile.dataset_manager import DatasetManager
 from utile.polynomial_regression import PolynomialRegression
 from utile.visualization import Visualization
-from utile.loocv import LOOCV
 
 if __name__ == "__main__":
     file_path = "data/Position_salaries.csv"
@@ -18,7 +17,6 @@ if __name__ == "__main__":
 
     if df_selected is not None:
         poly_reg = PolynomialRegression(df_selected, x_col, y_col)
-        loocv = LOOCV(df_selected, x_col, y_col)
 
         # Définir les ordres de polynômes à tester
         max_degree = len(df_selected) - 1
@@ -36,23 +34,9 @@ if __name__ == "__main__":
             exit()
 
         # Stocker les résultats
-        results = []
-        for degree in range(degree_min, degree_max + 1):
-            result = poly_reg.fit(degree)
-            loocv_result = loocv.cross_validate(degree)
+        results = [poly_reg.fit(degree) for degree in range(degree_min, degree_max + 1)]
 
-            # Ajouter le MSE LOOCV
-            result["loocv_avg_mse"] = loocv_result["avg_mse"]
-            results.append(result)
-
-            # Affichage des résultats
-            print(f"\n🔹 Polynôme d'ordre {degree}")
-            print(f"  - Coefficients : {result['coefficients']}")
-            print(f"  - R² Score : {result['r2_score']:.4f}")
-            print(f"  - MSE : {result['mse']:.4f}")
-            print(f"  - LOOCV MSE : {result['loocv_avg_mse']:.4f}")
-
-        # Générer les interpolations et afficher le graphique
+        # Générer les interpolations et afficher les graphiques
         viz = Visualization(df_selected, x_col, y_col)
         viz.generate_interpolations(results)
         viz.plot(results)
